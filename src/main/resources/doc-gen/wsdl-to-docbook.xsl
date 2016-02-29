@@ -165,7 +165,7 @@
     <xsl:template name="operationOverview">
         <xsl:param name="operation"/>
         <xsl:variable name="serviceType" select="if ( not(empty($operation/wsdl:input)) and not(empty($operation/wsdl:output)))
-            then 'input/output (synchronous)' else 'input-only (async)'"/>
+            then 'request/response (synchronous)' else 'input-only (async)'"/>
         <xsl:variable name="preCondCount" select="count($operation/wsdl:fault)"/>
         <xsl:variable name="preCondInd" select="if ($preCondCount eq 0) then 'no' else $preCondCount"/>
         <db:para>
@@ -189,7 +189,7 @@
 
     <xsl:template match="wsdl:output">
         <db:section>
-            <db:title>Reply message: <xsl:value-of select="@message"/></db:title>
+            <db:title>Response message: <xsl:value-of select="@message"/></db:title>
             <xsl:copy-of select="df:wsdlDocumentationToParas(wsdl:documentation)"/>
         </db:section>
     </xsl:template>
@@ -197,7 +197,7 @@
 
     <xsl:template match="wsdl:fault">
         <db:section>
-            <db:title>Pre-condition refusal: <xsl:value-of select="@name"/></db:title>
+            <db:title>Pre-condition signal: <xsl:value-of select="@name"/></db:title>
             <xsl:copy-of select="df:wsdlDocumentationToParas(wsdl:documentation)"/>
         </db:section>
     </xsl:template>
