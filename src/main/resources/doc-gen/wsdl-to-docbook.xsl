@@ -52,6 +52,52 @@
         <db:chapter>
             <db:title>General introduction</db:title>
             <xsl:copy-of select="df:wsdlDocumentationToParas( text() )"/>
+
+            <db:section>
+                <db:title>Target namespace</db:title>
+                <db:para>
+                    This WSDL targets the following XML namespace:
+                    <db:programlisting>
+<xsl:value-of select="../@targetNamespace"/>
+                    </db:programlisting>
+                </db:para>
+            </db:section>
+
+            <!-- TODO: Make this more elegant -->
+            <xsl:variable name="schemaImports" select="..//xs:import"/>
+            <xsl:if test="not(empty($schemaImports))">
+                <db:section>
+                    <db:title>Imported XML schemas</db:title>
+                    <db:para>
+                        This WSDL makes used of the following XML
+                        <xsl:value-of select="df:pluralise('schema', count($schemaImports))"/>
+                        for defining exchanged data types:
+                    </db:para>
+                    <db:table>
+                        <db:tgroup cols="2">
+                            <db:thead>
+                                <db:row>
+                                    <db:entry><db:para>Location</db:para></db:entry>
+                                    <db:entry><db:para>Namespace</db:para></db:entry>
+                                </db:row>
+                            </db:thead>
+                            <db:tbody>
+                                <xsl:for-each select="$schemaImports">
+                                    <db:row>
+                                        <db:entry>
+                                            <db:para><db:literal><xsl:value-of select="@schemaLocation"/></db:literal></db:para>
+                                        </db:entry>
+                                        <db:entry>
+                                            <db:para><db:literal><xsl:value-of select="@namespace"/></db:literal></db:para>
+                                        </db:entry>
+                                    </db:row>
+                                </xsl:for-each>
+                            </db:tbody>
+                        </db:tgroup>
+                    </db:table>
+                </db:section>
+            </xsl:if>
+
         </db:chapter>
     </xsl:template>
 
@@ -103,10 +149,57 @@
     <xsl:template match="wsdl:operation">
         <db:section>
             <db:title>Use-case: <xsl:value-of select="@name"/></db:title>
+
+            <xsl:copy-of select="df:wsdlDocumentationToParas(wsdl:documentation)"/>
+
+            <xsl:call-template name="operationOverview">
+                <xsl:with-param name="operation" select="."/>
+            </xsl:call-template>
+
+            <xsl:apply-templates/>
         </db:section>
 
-        <xsl:copy-of select="df:wsdlDocumentationToParas(wsdl:documentation)"/>
+    </xsl:template>
 
+
+    <xsl:template name="operationOverview">
+        <xsl:param name="operation"/>
+        <xsl:variable name="serviceType" select="if ( not(empty($operation/wsdl:input)) and not(empty($operation/wsdl:output)))
+            then 'input/output (synchronous)' else 'input-only (async)'"/>
+        <xsl:variable name="preCondCount" select="count($operation/wsdl:fault)"/>
+        <xsl:variable name="preCondInd" select="if ($preCondCount eq 0) then 'no' else $preCondCount"/>
+        <db:para>
+            This is a <db:emphasis><xsl:value-of select="$serviceType"/></db:emphasis> service with
+            <xsl:value-of select="$preCondInd"/>
+            <xsl:text> </xsl:text>
+            <xsl:value-of select="df:pluralise('pre-condition', $preCondCount)"/>
+            <xsl:text>.</xsl:text>
+        </db:para>
+    </xsl:template>
+
+
+
+    <xsl:template match="wsdl:input">
+        <db:section>
+            <db:title>Request message: <xsl:value-of select="@message"/></db:title>
+            <xsl:copy-of select="df:wsdlDocumentationToParas(wsdl:documentation)"/>
+        </db:section>
+    </xsl:template>
+
+
+    <xsl:template match="wsdl:output">
+        <db:section>
+            <db:title>Reply message: <xsl:value-of select="@message"/></db:title>
+            <xsl:copy-of select="df:wsdlDocumentationToParas(wsdl:documentation)"/>
+        </db:section>
+    </xsl:template>
+
+
+    <xsl:template match="wsdl:fault">
+        <db:section>
+            <db:title>Pre-condition refusal: <xsl:value-of select="@name"/></db:title>
+            <xsl:copy-of select="df:wsdlDocumentationToParas(wsdl:documentation)"/>
+        </db:section>
     </xsl:template>
 
 
