@@ -1,0 +1,6 @@
+*~
+*.bak
+*.iml
+*.ipr
+.idea
+.classpath
