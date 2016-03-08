@@ -211,13 +211,50 @@
             <db:title>Class: <xsl:value-of select="@name"/> </db:title>
             <xsl:apply-templates select="comment"/>
 
-            <!-- Data stucture -->
-            <!-- Methods -->
-            <!--<xsl:apply-templates select="method"/>-->
+
+            <xsl:if test="not(empty(field))">
+                <db:para>
+                    Data structure:
+                </db:para>
+                <db:table width="100%">
+                    <db:tgroup cols="3">
+                        <db:colspec colnum="1" colwidth="30%"/>
+                        <db:colspec colnum="2" colwidth="30%"/>
+                        <db:colspec colnum="3" colwidth="40%"/>
+                        <db:thead>
+                            <db:row>
+                                <db:entry><db:para>Name</db:para></db:entry>
+                                <db:entry><db:para>Type</db:para></db:entry>
+                                <db:entry><db:para>Comment</db:para></db:entry>
+                            </db:row>
+                        </db:thead>
+                        <db:tbody>
+                            <xsl:for-each select="field">
+                                <db:row>
+                                    <db:entry>
+                                        <db:para>
+                                            <xsl:if test="@static eq 'true'"><db:emphasis>static</db:emphasis></xsl:if>
+                                            <db:literal><xsl:value-of select="@name"/></db:literal>
+                                        </db:para>
+                                    </db:entry>
+                                    <db:entry>
+                                        <xsl:apply-templates select="type"/>
+                                        <db:para/>
+                                    </db:entry>
+                                    <db:entry>
+                                        <xsl:apply-templates select="comment"/>
+                                        <db:para/>
+                                    </db:entry>
+                                </db:row>
+                            </xsl:for-each>
+                        </db:tbody>
+                    </db:tgroup>
+                </db:table>
+            </xsl:if>
 
             <xsl:if test="not(empty(method))">
                 <db:para>
-                    Class details:
+                    Methods:
                 </db:para>
                 <db:table width="100%">
                     <!--<db:title>Method(s) offered by <xsl:value-of select="@name"/></db:title>-->
@@ -237,31 +274,23 @@
                         <db:tbody>
                             <xsl:for-each select="method">
                                 <db:row>
-                                    <!--<db:entry>-->
-                                        <!--<db:literal><xsl:value-of select="@name"/>()</db:literal>-->
-                                    <!--</db:entry>-->
-                                    <!--<db:entry>-->
-                                        <!---->
-                                    <!--</db:entry>-->
-                                    <!--<db:entry>-->
-                                        <!--<xsl:apply-templates select="return"/>-->
-                                    <!--</db:entry>-->
-                                    <!--<db:entry>-->
-                                        <!---->
-                                    <!--</db:entry>-->
                                     <db:entry>
                                         <db:para>
                                             <db:literal><xsl:value-of select="@name"/>()</db:literal>
+                                            <db:para/>
                                         </db:para>
                                     </db:entry>
                                     <db:entry>
                                         <xsl:apply-templates select="parameter"/>
+                                        <db:para/>
                                     </db:entry>
                                     <db:entry>
                                         <xsl:apply-templates select="return"/>
+                                        <db:para/>
                                     </db:entry>
                                     <db:entry>
                                         <xsl:apply-templates select="comment"/>
+                                        <db:para/>
                                     </db:entry>
                                 </db:row>
                             </xsl:for-each>
@@ -269,6 +298,9 @@
                     </db:tgroup>
                 </db:table>
             </xsl:if>
+            <xsl:call-template name="annotations">
+                <xsl:with-param name="annotations" select="annotation"/>
+            </xsl:call-template>
         </db:section>
     </xsl:template>
 
@@ -281,6 +313,7 @@
     <!-- Generically rendes a type name (with link) -->
     <xsl:template match="type">
         <db:link linkend="{@qualified}"><xsl:value-of select="df:shortTypeName(@qualified)"/></db:link>
+        <xsl:value-of select="@dimension"/>
         <xsl:apply-templates/>
     </xsl:template>
 
@@ -309,8 +342,10 @@
         <db:section xml:id="{@qualified}">
             <db:title>Enum: <xsl:value-of select="@name"/> </db:title>
             <xsl:apply-templates select="comment"/>
-            <db:table>
+            <db:table width="100%">
                 <db:tgroup cols="2">
+                    <db:colspec colnum="1" colwidth="50%"/>
+                    <db:colspec colnum="2" colwidth="50%"/>
                     <db:thead>
                         <db:row>
                             <db:entry><db:para>Constant</db:para></db:entry>
@@ -331,6 +366,9 @@
                     </db:tbody>
                 </db:tgroup>
             </db:table>
+            <xsl:call-template name="annotations">
+                <xsl:with-param name="annotations" select="annotation"/>
+            </xsl:call-template>
         </db:section>
     </xsl:template>
 
@@ -338,8 +376,77 @@
     <xsl:template match="annotation">
         <db:section xml:id="{@qualified}">
             <db:title>@<xsl:value-of select="@name"/> </db:title>
-            <xsl:apply-templates/>
+            <xsl:apply-templates select="comment"/>
+            <xsl:if test="not(empty(element))">
+                <db:table width="100%">
+                    <db:tgroup cols="3">
+                        <db:colspec colnum="1" colwidth="35%"/>
+                        <db:colspec colnum="2" colwidth="35%"/>
+                        <db:colspec colnum="3" colwidth="30%"/>
+                        <db:thead>
+                            <db:row>
+                                <db:entry><db:para>Element</db:para></db:entry>
+                                <db:entry><db:para>Type</db:para></db:entry>
+                                <db:entry><db:para>Default</db:para></db:entry>
+                            </db:row>
+                        </db:thead>
+                        <db:tbody>
+                            <xsl:for-each select="element">
+                                <db:row>
+                                    <db:entry>
+                                        <db:literal><xsl:value-of select="@name"/></db:literal>
+                                    </db:entry>
+                                    <db:entry>
+                                        <xsl:apply-templates select="type"/>
+                                    </db:entry>
+                                    <db:entry>
+                                        <db:para>
+                                            <xsl:value-of select="@default"/>
+                                        </db:para>
+                                    </db:entry>
+                                </db:row>
+                            </xsl:for-each>
+                        </db:tbody>
+                    </db:tgroup>
+                </db:table>
+            </xsl:if>
+            <xsl:call-template name="annotations">
+                <xsl:with-param name="annotations" select="annotation"/>
+            </xsl:call-template>
         </db:section>
+    </xsl:template>
+
+
+    <xsl:template name="annotations">
+        <xsl:param name="annotations" as="node()*"/>
+        <xsl:if test="not(empty($annotations))">
+            <db:note>
+                <db:title>Annotations:</db:title>
+
+                <db:para>
+                    Annotated with:
+                    <xsl:for-each select="$annotations">
+                        <db:literal>
+                            <xsl:text>@</xsl:text>
+                            <xsl:value-of select="@name"/>
+                            <xsl:text>(</xsl:text>
+                            <xsl:apply-templates select="argument"/>
+                            <xsl:text>)</xsl:text>
+                        </db:literal>
+                        <xsl:choose>
+                            <xsl:when test="position() ne last()"><xsl:text>, </xsl:text></xsl:when>
+                            <xsl:otherwise>.</xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:for-each>
+                </db:para>
+            </db:note>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="annotation/argument">
+        <xsl:value-of select="@name"/>
+        <xsl:text>=</xsl:text>
+        <xsl:value-of select="value"/>
     </xsl:template>
 
 
