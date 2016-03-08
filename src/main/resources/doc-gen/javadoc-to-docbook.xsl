@@ -201,9 +201,13 @@
                 <db:para>
                     Class details:
                 </db:para>
-                <db:table>
+                <db:table width="100%">
                     <!--<db:title>Method(s) offered by <xsl:value-of select="@name"/></db:title>-->
                     <db:tgroup cols="4">
+                        <db:colspec colnum="1" colwidth="25%"/>
+                        <db:colspec colnum="2" colwidth="25%"/>
+                        <db:colspec colnum="3" colwidth="25%"/>
+                        <db:colspec colnum="4" colwidth="25%"/>
                         <db:thead>
                             <db:row>
                                 <db:entry><db:para>Name</db:para></db:entry>
@@ -247,9 +251,15 @@
                     </db:tgroup>
                 </db:table>
             </xsl:if>
-
-
         </db:section>
+    </xsl:template>
+
+    <xsl:template match="class/method/parameter">
+        <db:para><xsl:value-of select="type/@qualified"/></db:para>
+    </xsl:template>
+
+    <xsl:template match="class/method/return">
+        <db:para><xsl:value-of select="@qualified"/></db:para>
     </xsl:template>
 
 
