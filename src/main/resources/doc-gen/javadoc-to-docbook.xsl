@@ -14,6 +14,11 @@
          'xmldoclet' plugin) to a PDF, with an emphasis on design-by-contract. The output is
          meant as a business-friendly accompaniment to the in-code documentation.
 
+         TODO: Major missing feature: If package filter excluded certain referenced packages, still
+         bring in those classes for reference / linking.
+
+         TODO: Filter out generated classes, such as JPA entity metadata classes "Foo_"
+
          @author Dawid Loubser
      -->
 
@@ -50,6 +55,16 @@
                 </xsl:if>
                 <!-- TODO: Date (original, how? Look for most recent data in JavaDoc comments?) -->
             </db:info>
+
+            <db:chapter>
+                <db:title>Introduction</db:title>
+                <db:para>
+                    This documentation serves as an accompaniment to the Java code
+                    <xsl:if test="not(empty($filterPackages))">
+                        in the Java package <db:literal><xsl:value-of select="$filterPackages"/></db:literal>
+                    </xsl:if>, as an easily-referenced text to highlight design or architectural aspects.
+                </db:para>
+            </db:chapter>
 
             <xsl:apply-templates/>
 
@@ -258,15 +273,20 @@
     </xsl:template>
 
 
+    <xsl:function name="df:shortTypeName">
+        <xsl:param name="className"/>
+        <xsl:sequence select="fn:tokenize($className,'\.')[last()]"/>
+    </xsl:function>
+
     <!-- Generically rendes a type name (with link) -->
     <xsl:template match="type">
-        <db:link linkend="{@qualified}"><xsl:value-of select="replace(@qualified,$dontRenderInTypeName,'')"/></db:link>
+        <db:link linkend="{@qualified}"><xsl:value-of select="df:shortTypeName(@qualified)"/></db:link>
         <xsl:apply-templates/>
     </xsl:template>
 
     <xsl:template match="generic">
         <xsl:text>&lt;</xsl:text>
-        <db:link linkend="{@qualified}"><xsl:value-of select="replace(@qualified,$dontRenderInTypeName,'')"/></db:link>
+        <db:link linkend="{@qualified}"><xsl:value-of select="df:shortTypeName(@qualified)"/></db:link>
         <xsl:text>&gt;</xsl:text>
     </xsl:template>
 
@@ -279,7 +299,7 @@
     <!-- TODO: Generalise with 'type' template -->
     <xsl:template match="class/method/return">
         <db:para>
-            <db:link linkend="{@qualified}"><xsl:value-of select="replace(@qualified,$dontRenderInTypeName,'')"/></db:link>
+            <db:link linkend="{@qualified}"><xsl:value-of select="df:shortTypeName(@qualified)"/></db:link>
             <xsl:apply-templates/>
         </db:para>
     </xsl:template>
