@@ -37,7 +37,6 @@
          are not considered as bona fide "service implementations" -->
     <xsl:param name="systemPackages" as="xs:string*" select="('java','javax','net.jini')"/>
 
-    <xsl:param name="dontRenderInTypeName">java.lang.|java.util.</xsl:param>
 
 
     <!-- Disable default pass-through -->
@@ -73,16 +72,15 @@
 
 
     <!-- Top-level, only for packages that match the filter -->
-    <xsl:template match="package[ starts-with(@name, $filterPackages)]">
+    <xsl:template match="package[ starts-with(@name, $filterPackages) ]">
 
         <!-- Per-package formula:
          - Service contracts, incl request / response
-         - Implementation(s) - in this, or other, packages
+         - Implementation(s) - in this, or other, packages (TODO: Still required)
          - Data types (with the other sections linking to this)
          -->
         <xsl:variable name="contracts" select="interface"/>
         <!-- TODO: Implement (slightly tricky) -->
-        <!--<xsl:variable name="implementations" select="for $c in class[interface[not( fn:starts-with(@qualified,$systemPackages))]]"/>-->
         <xsl:variable name="dataStructures" select="(enum,annotation,class)[not(implementations)]"/>
 
         <db:chapter xml:id="{@name}">
