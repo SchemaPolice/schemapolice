@@ -20,23 +20,19 @@
     <xsl:output method="xml" media-type="application/docbook+xml"/>
 
     <!-- Specify to make this organisation name the visible author -->
-    <xsl:param name="orgName" as="xs:string?">Travellinck International</xsl:param>
+    <xsl:param name="orgName" as="xs:string?">Anonymous</xsl:param>
+
     <!-- Specify to name the system (TODO: Generate default if missing) -->
-    <xsl:param name="systemName" as="xs:string?">Corporate App: Tags Module</xsl:param>
+    <xsl:param name="systemName" as="xs:string?">System</xsl:param>
 
-    <xsl:param name="filterPackages" as="xs:string*" select="(
-        'com.travellinck.tags.meaningful',
-        'com.travellinck.tags.meaningful.impl',
-        'com.travellinck.tags.meaningful.reporting.plugins',
-        'com.travellinck.tags.meaningful.transIT',
-        'com.travellinck.tags.meaningful.util')"/>
-
-        <!--'com.travellinck.trip.observations',-->
-        <!--'com.travellinck.trip.observations.impl')"/>-->
+    <!-- TODO: Support multiple (comma-separated). For now, only one package prefix -->
+    <xsl:param name="filterPackages" as="xs:string" select="''"/>
 
     <!-- Packages which are considered 'system' packages. Implementations of interfaces in these packages
          are not considered as bona fide "service implementations" -->
     <xsl:param name="systemPackages" as="xs:string*" select="('java','javax','net.jini')"/>
+
+    <xsl:param name="dontRenderInTypeName">java.lang.|java.util.</xsl:param>
 
 
     <!-- Disable default pass-through -->
@@ -62,7 +58,7 @@
 
 
     <!-- Top-level, only for packages that match the filter -->
-    <xsl:template match="package[@name = $filterPackages]">
+    <xsl:template match="package[ starts-with(@name, $filterPackages)]">
 
         <!-- Per-package formula:
          - Service contracts, incl request / response
@@ -115,7 +111,9 @@
                 <db:itemizedlist>
                     <xsl:for-each select="$services">
                         <db:listitem>
-                            <db:para><xsl:value-of select="@name"/></db:para>
+                            <db:para>
+                                <db:link linkend="{@qualified}"><db:literal><xsl:value-of select="@name"/></db:literal></db:link>
+                            </db:para>
                         </db:listitem>
                     </xsl:for-each>
                 </db:itemizedlist>
@@ -147,7 +145,7 @@
                             <db:formalpara>
                                 <db:title><xsl:value-of select="@name"/></db:title>
                                 <db:para>
-                                    <db:link linkend="{type/@qualified}"><xsl:value-of select="type/@qualified"/></db:link>
+                                    <db:link linkend="{type/@qualified}"><db:literal><xsl:value-of select="type/@qualified"/></db:literal></db:link>
                                 </db:para>
                             </db:formalpara>
                         </db:listitem>
@@ -155,14 +153,14 @@
                 </db:orderedlist>
             </xsl:if>
 
-            <xsl:if test="not(empty($output))">
+            <xsl:if test="not(empty($output/@qualified))">
                 <db:para>Output:</db:para>
                 <db:orderedlist>
                     <db:listitem>
                         <db:formalpara>
                             <db:title>return</db:title>
                             <db:para>
-                                <db:link linkend="{$output/@qualified}"><xsl:value-of select="$output/@qualified"/></db:link>
+                                <db:link linkend="{$output/@qualified}"><db:literal><xsl:value-of select="$output/@qualified"/></db:literal></db:link>
                             </db:para>
                         </db:formalpara>
                     </db:listitem>
@@ -187,6 +185,11 @@
             <!--<xsl:apply-templates/>-->
         <!--</db:section>-->
     <!--</xsl:template>-->
+
+    <!-- Types look like:
+    <type qualified="org.foo.bar">
+        <generic qualified="java.lang.String"/>
+    -->
 
     <xsl:template match="class">
         <db:section xml:id="{@qualified}">
@@ -254,12 +257,31 @@
         </db:section>
     </xsl:template>
 
-    <xsl:template match="class/method/parameter">
-        <db:para><xsl:value-of select="type/@qualified"/></db:para>
+
+    <!-- Generically rendes a type name (with link) -->
+    <xsl:template match="type">
+        <db:link linkend="{@qualified}"><xsl:value-of select="replace(@qualified,$dontRenderInTypeName,'')"/></db:link>
+        <xsl:apply-templates/>
     </xsl:template>
 
+    <xsl:template match="generic">
+        <xsl:text>&lt;</xsl:text>
+        <db:link linkend="{@qualified}"><xsl:value-of select="replace(@qualified,$dontRenderInTypeName,'')"/></db:link>
+        <xsl:text>&gt;</xsl:text>
+    </xsl:template>
+
+    <xsl:template match="class/method/parameter">
+        <db:para>
+            <xsl:apply-templates select="type"/>
+        </db:para>
+    </xsl:template>
+
+    <!-- TODO: Generalise with 'type' template -->
     <xsl:template match="class/method/return">
-        <db:para><xsl:value-of select="@qualified"/></db:para>
+        <db:para>
+            <db:link linkend="{@qualified}"><xsl:value-of select="replace(@qualified,$dontRenderInTypeName,'')"/></db:link>
+            <xsl:apply-templates/>
+        </db:para>
     </xsl:template>
 
 
@@ -306,64 +328,6 @@
     </xsl:template>
 
 
-    <xsl:template name="portTypeOverview">
-        <xsl:param name="portType"/>
-        <xsl:variable name="ops" select="$portType/operation"/>
-        <xsl:copy-of select="df:wsdlDocumentationToParas( $portType/documentation/text() )"/>
-        <db:para>
-            <db:literal>
-                <xsl:value-of select="$portType/@name"/>
-            </db:literal>
-            offers
-            <xsl:value-of select="count($ops)"/>
-            <xsl:text> </xsl:text>
-            <xsl:value-of select="df:pluralise('use case', count($ops))"/>:
-
-            <db:itemizedlist>
-                <xsl:for-each select="$ops">
-                    <db:listitem>
-                        <db:para><xsl:value-of select="@name"/></db:para>
-                    </db:listitem>
-                </xsl:for-each>
-            </db:itemizedlist>
-        </db:para>
-    </xsl:template>
-
-
-
-    <xsl:template match="operation">
-        <db:section>
-            <db:title>Use-case: <xsl:value-of select="@name"/></db:title>
-
-            <xsl:copy-of select="df:wsdlDocumentationToParas(documentation)"/>
-
-            <xsl:call-template name="operationOverview">
-                <xsl:with-param name="operation" select="."/>
-            </xsl:call-template>
-
-            <xsl:apply-templates/>
-        </db:section>
-
-    </xsl:template>
-
-
-    <xsl:template name="operationOverview">
-        <xsl:param name="operation"/>
-        <xsl:variable name="serviceType" select="if ( not(empty($operation/input)) and not(empty($operation/output)))
-            then 'request/response (synchronous)' else 'input-only (async)'"/>
-        <xsl:variable name="preCondCount" select="count($operation/fault)"/>
-        <xsl:variable name="preCondInd" select="if ($preCondCount eq 0) then 'no' else $preCondCount"/>
-        <db:para>
-            This is a <db:emphasis><xsl:value-of select="$serviceType"/></db:emphasis> service with
-            <xsl:value-of select="$preCondInd"/>
-            <xsl:text> </xsl:text>
-            <xsl:value-of select="df:pluralise('pre-condition', $preCondCount)"/>
-            <xsl:text>.</xsl:text>
-        </db:para>
-    </xsl:template>
-
-
-
     <xsl:function name="df:pluralise">
         <xsl:param name="base"/>
         <xsl:param name="n"/>
@@ -377,6 +341,7 @@
         <xsl:if test="not(empty($documentation))">
             <xsl:variable name="paras" select="fn:tokenize($documentation,'(\s*&#10;\s*&#10;\s*|\s+-)')"/>
             <!-- TODO: Filter out obvious copyrights, author statements, or image refs -->
+            <!-- TODO: Detect markdown-style lists and convert to true lists -->
             <xsl:for-each select="$paras">
                 <db:para><xsl:value-of select="."/></db:para>
             </xsl:for-each>
