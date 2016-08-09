@@ -13,3 +13,7 @@ This is your crime-fighting toolkit! This is a project with a long-term roadmap:
 
 
 These are early days. This repository will first be used to gather existing work done in this space.
+
+## Short-term TODOs
+
+1. Some common APIs (like Sabre, travel booking) make use of large number of repeated anonymous inner types, causing great pain to API developers. Develop a tool to automatically detect anonymous types with the same structure, and refactor those schemas to re-use the extracted, named types.
